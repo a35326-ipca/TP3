@@ -12,6 +12,7 @@ Chart.register(...registerables);
   styleUrl: './carteira.css',
 })
 export class Carteira implements OnInit, OnDestroy {
+  // Guarda a referencia do canvas quando ele aparece no ecra.
   @ViewChild('graficoCarteira') set canvasGrafico(
     graficoCarteira: ElementRef<HTMLCanvasElement> | undefined,
   ) {
@@ -23,6 +24,7 @@ export class Carteira implements OnInit, OnDestroy {
     return this.temaEscuro;
   }
 
+  // Dados usados pela tabela, resumo e grafico.
   linhas: LinhaCarteira[] = [];
   totais: TotaisCarteira = {
     totalAquisicao: 0,
@@ -41,8 +43,10 @@ export class Carteira implements OnInit, OnDestroy {
   constructor(private readonly carteiraService: CarteiraService) {}
 
   ngOnInit(): void {
+    // Recupera o tema guardado no navegador.
     this.temaEscuro = localStorage.getItem(this.chaveTema) === 'escuro';
 
+    // Carrega a carteira, calcula totais e prepara o grafico.
     this.carteiraService.carregarCarteira().subscribe({
       next: (linhas) => {
         this.linhas = linhas;
@@ -59,6 +63,7 @@ export class Carteira implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    // Limpa o grafico quando o componente deixa de existir.
     if (this.graficoAgendado) {
       cancelAnimationFrame(this.graficoAgendado);
     }
@@ -67,6 +72,7 @@ export class Carteira implements OnInit, OnDestroy {
   }
 
   alternarTema(): void {
+    // Alterna tema e guarda a escolha no navegador.
     this.temaEscuro = !this.temaEscuro;
     localStorage.setItem(this.chaveTema, this.temaEscuro ? 'escuro' : 'claro');
     this.atualizarCoresGrafico();
@@ -112,6 +118,7 @@ export class Carteira implements OnInit, OnDestroy {
     return linhas.reduce((soma, linha) => soma + linha.quantidade, 0);
   }
 
+  // Soma os valores da carteira e calcula a variacao total.
   private calcularTotais(linhas: LinhaCarteira[]): TotaisCarteira {
     const totalAquisicao = linhas.reduce((soma, linha) => soma + linha.totalAquisicao, 0);
     const valorAtual = linhas.reduce((soma, linha) => soma + linha.valorAtual, 0);
@@ -125,6 +132,7 @@ export class Carteira implements OnInit, OnDestroy {
     };
   }
 
+  // Espera pelo proximo frame para garantir que o canvas ja existe.
   private agendarCriacaoGrafico(): void {
     if (this.graficoAgendado) {
       cancelAnimationFrame(this.graficoAgendado);
@@ -136,6 +144,7 @@ export class Carteira implements OnInit, OnDestroy {
     });
   }
 
+  // Cria o grafico com valor investido e valor atual por ticker.
   private criarGrafico(): void {
     if (!this.graficoCarteira || this.linhas.length === 0) {
       return;
@@ -204,6 +213,7 @@ export class Carteira implements OnInit, OnDestroy {
     });
   }
 
+  // Atualiza so as cores do grafico quando o tema muda.
   private atualizarCoresGrafico(): void {
     if (!this.grafico) {
       this.agendarCriacaoGrafico();
@@ -246,6 +256,7 @@ export class Carteira implements OnInit, OnDestroy {
     this.grafico = undefined;
   }
 
+  // Define cores diferentes para modo claro e modo escuro.
   private obterCoresGrafico(): {
     valorInvestido: string;
     valorAtual: string;

@@ -1,9 +1,11 @@
+-- Cria a base de dados usada pelo TP3.
 CREATE DATABASE IF NOT EXISTS tp3_carteira
   DEFAULT CHARACTER SET utf8mb4
   DEFAULT COLLATE utf8mb4_unicode_ci;
 
 USE tp3_carteira;
 
+-- Guarda apenas os dados base da carteira.
 CREATE TABLE IF NOT EXISTS carteira_acoes (
   id INT AUTO_INCREMENT PRIMARY KEY,
   ticker VARCHAR(10) NOT NULL,
@@ -13,8 +15,10 @@ CREATE TABLE IF NOT EXISTS carteira_acoes (
   preco_compra DECIMAL(10, 2) NOT NULL
 );
 
+-- Limpa dados antigos para evitar duplicados ao repetir o script.
 TRUNCATE TABLE carteira_acoes;
 
+-- Insere os exemplos usados na aplicacao.
 INSERT INTO carteira_acoes
   (ticker, empresa, data_compra, quantidade, preco_compra)
 VALUES

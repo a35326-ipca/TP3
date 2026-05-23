@@ -13,6 +13,7 @@ export class CarteiraService {
 
   constructor(private readonly http: HttpClient) {}
 
+  // Carrega a carteira e junta cada acao com a cotacao atual.
   carregarCarteira(): Observable<LinhaCarteira[]> {
     return this.carregarDadosCarteira().pipe(
       switchMap((acoes) => {
@@ -29,17 +30,20 @@ export class CarteiraService {
     );
   }
 
+  // Tenta usar a API local com MariaDB; se falhar usa o JSON.
   private carregarDadosCarteira(): Observable<AcaoCarteira[]> {
     return this.http
       .get<AcaoCarteira[]>(environment.carteiraApiUrl)
       .pipe(catchError(() => this.http.get<AcaoCarteira[]>(this.ficheiroCarteira)));
   }
 
+  // Pede a cotacao atual de uma acao na API Finnhub.
   private obterCotacao(ticker: string): Observable<CotacaoFinnhub> {
     const url = `${environment.finnhubBaseUrl}/quote?symbol=${ticker}&token=${environment.finnhubApiKey}`;
     return this.http.get<CotacaoFinnhub>(url);
   }
 
+  // Cria uma linha da tabela com valores calculados.
   private criarLinha(acao: AcaoCarteira, cotacaoDia: number): LinhaCarteira {
     const totalAquisicao = acao.quantidade * acao.precoCompra;
     const valorAtual = acao.quantidade * cotacaoDia;

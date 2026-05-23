@@ -1,14 +1,16 @@
-/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
-/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+/* Configuracao TypeScript usada pela aplicacao Angular. */
 {
   "extends": "./tsconfig.json",
+  /* Pasta onde o Angular coloca ficheiros compilados temporarios. */
   "compilerOptions": {
     "outDir": "./out-tsc/app",
     "types": []
   },
+  /* Inclui todos os ficheiros TypeScript da aplicacao. */
   "include": [
     "src/**/*.ts"
   ],
+  /* Exclui ficheiros de testes desta compilacao. */
   "exclude": [
     "src/**/*.spec.ts"
   ]

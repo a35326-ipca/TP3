@@ -1,7 +1,7 @@
-/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
-/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+/* Configuracao principal de TypeScript para o projeto. */
 {
   "compileOnSave": false,
+  /* Regras de compilacao e seguranca de tipos. */
   "compilerOptions": {
     "strict": true,
     "noImplicitOverride": true,
@@ -15,6 +15,7 @@
     "target": "ES2022",
     "module": "preserve"
   },
+  /* Regras extra usadas pelo compilador Angular. */
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
@@ -23,6 +24,7 @@
     "strictTemplates": true
   },
   "files": [],
+  /* Aponta para a configuracao especifica da app. */
   "references": [
     {
       "path": "./tsconfig.app.json"

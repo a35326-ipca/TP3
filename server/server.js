@@ -5,9 +5,11 @@ const mysql = require('mysql2/promise');
 
 dotenv.config({ quiet: true });
 
+// Configura o servidor da API local.
 const app = express();
 const port = Number(process.env.PORT || 3000);
 
+// Cria a ligacao reutilizavel para a MariaDB.
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   port: Number(process.env.DB_PORT || 3306),
@@ -21,6 +23,7 @@ const pool = mysql.createPool({
 app.use(cors());
 app.use(express.json());
 
+// Devolve os dados base da carteira guardados na base de dados.
 app.get('/api/carteira', async (_req, res) => {
   try {
     const [linhas] = await pool.query(`
@@ -35,6 +38,7 @@ app.get('/api/carteira', async (_req, res) => {
     `);
 
     res.json(
+      // Converte campos numericos para number antes de enviar ao Angular.
       linhas.map((linha) => ({
         ...linha,
         quantidade: Number(linha.quantidade),
