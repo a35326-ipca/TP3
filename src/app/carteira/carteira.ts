@@ -69,7 +69,7 @@ export class Carteira implements OnInit, OnDestroy {
   alternarTema(): void {
     this.temaEscuro = !this.temaEscuro;
     localStorage.setItem(this.chaveTema, this.temaEscuro ? 'escuro' : 'claro');
-    this.agendarCriacaoGrafico();
+    this.atualizarCoresGrafico();
   }
 
   formatarMoeda(valor: number): string {
@@ -202,6 +202,43 @@ export class Carteira implements OnInit, OnDestroy {
         },
       },
     });
+  }
+
+  private atualizarCoresGrafico(): void {
+    if (!this.grafico) {
+      this.agendarCriacaoGrafico();
+      return;
+    }
+
+    const cores = this.obterCoresGrafico();
+    this.grafico.data.datasets[0].backgroundColor = cores.valorInvestido;
+    this.grafico.data.datasets[1].backgroundColor = cores.valorAtual;
+
+    const legenda = this.grafico.options.plugins?.legend?.labels;
+    if (legenda) {
+      legenda.color = cores.texto;
+    }
+
+    const escalaX = this.grafico.options.scales?.['x'];
+    const escalaY = this.grafico.options.scales?.['y'];
+
+    if (escalaX?.ticks) {
+      escalaX.ticks.color = cores.texto;
+    }
+
+    if (escalaX?.grid) {
+      escalaX.grid.color = cores.grelha;
+    }
+
+    if (escalaY?.ticks) {
+      escalaY.ticks.color = cores.texto;
+    }
+
+    if (escalaY?.grid) {
+      escalaY.grid.color = cores.grelha;
+    }
+
+    this.grafico.update('none');
   }
 
   private destruirGrafico(): void {
