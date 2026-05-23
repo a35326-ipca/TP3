@@ -1,0 +1,143 @@
+<section class="painel">
+  <div class="cabecalho">
+    <h1>Carteira de ações</h1>
+
+    <button
+      class="botao-tema"
+      type="button"
+      (click)="alternarTema()"
+      [attr.aria-label]="temaEscuro ? 'Ativar modo claro' : 'Ativar modo escuro'"
+      [title]="temaEscuro ? 'Ativar modo claro' : 'Ativar modo escuro'"
+    >
+      @if (temaEscuro) {
+        <svg
+          class="icone-tema"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z"
+          />
+        </svg>
+      } @else {
+        <svg
+          class="icone-tema"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"
+          />
+        </svg>
+      }
+    </button>
+  </div>
+
+  @if (aCarregar) {
+    <p class="estado">A carregar dados da carteira e cotações...</p>
+  } @else if (mensagemErro) {
+    <p class="erro">{{ mensagemErro }}</p>
+  } @else {
+    <div class="resumo">
+      <article class="cartao-resumo">
+        <span>Valor total investido</span>
+        <strong>{{ formatarMoeda(totais.totalAquisicao) }}</strong>
+      </article>
+      <article class="cartao-resumo">
+        <span>Valor atual da carteira</span>
+        <strong>{{ formatarMoeda(totais.valorAtual) }}</strong>
+      </article>
+      <article class="cartao-resumo">
+        <span>Variação total</span>
+        <strong
+          class="variacao"
+          [class.variacao-positiva]="totais.variacaoPercentual > 0"
+          [class.variacao-negativa]="totais.variacaoPercentual < 0"
+          [class.variacao-nula]="totais.variacaoPercentual === 0"
+        >
+          {{ formatarPercentagem(totais.variacaoPercentual) }}
+        </strong>
+      </article>
+      <article class="cartao-resumo">
+        <span>Número de ações</span>
+        <strong>{{ numeroTotalAcoes }}</strong>
+      </article>
+    </div>
+
+    <div class="tabela-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Ticker</th>
+            <th>Empresa</th>
+            <th>Data da Compra</th>
+            <th>QT</th>
+            <th>PU</th>
+            <th>Total</th>
+            <th>Cotação do dia</th>
+            <th>Valor</th>
+            <th>Variação (%)</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (linha of linhas; track linha.ticker) {
+            <tr>
+              <td class="ticker">{{ linha.ticker }}</td>
+              <td>{{ linha.empresa }}</td>
+              <td>{{ formatarData(linha.dataCompra) }}</td>
+              <td class="numero">{{ linha.quantidade }}</td>
+              <td class="numero">{{ formatarMoeda(linha.precoCompra) }}</td>
+              <td class="numero">{{ formatarMoeda(linha.totalAquisicao) }}</td>
+              <td class="numero">{{ formatarMoeda(linha.cotacaoDia) }}</td>
+              <td class="numero">{{ formatarMoeda(linha.valorAtual) }}</td>
+              <td
+                class="numero variacao"
+                [class.variacao-positiva]="linha.variacaoPercentual > 0"
+                [class.variacao-negativa]="linha.variacaoPercentual < 0"
+                [class.variacao-nula]="linha.variacaoPercentual === 0"
+              >
+                {{ formatarPercentagem(linha.variacaoPercentual) }}
+              </td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <td class="total-label" colspan="5">TOTAL</td>
+            <td class="numero">{{ formatarMoeda(totais.totalAquisicao) }}</td>
+            <td></td>
+            <td class="numero">{{ formatarMoeda(totais.valorAtual) }}</td>
+            <td
+              class="numero variacao"
+              [class.variacao-positiva]="totais.variacaoPercentual > 0"
+              [class.variacao-negativa]="totais.variacaoPercentual < 0"
+              [class.variacao-nula]="totais.variacaoPercentual === 0"
+            >
+              {{ formatarPercentagem(totais.variacaoPercentual) }}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <section class="grafico">
+      <div class="grafico-cabecalho">
+        <h2>Comparação por ação</h2>
+        <p>Valor investido e valor atual por ticker.</p>
+      </div>
+      <div class="grafico-area">
+        <canvas #graficoCarteira></canvas>
+      </div>
+    </section>
+  }
+</section>
