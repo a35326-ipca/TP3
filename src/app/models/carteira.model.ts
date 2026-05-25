@@ -33,3 +33,17 @@ export interface TotaisCarteira {
   valorAtual: number;
   variacaoPercentual: number;
 }
+
+// Dados enviados quando o utilizador compra acoes.
+export interface CompraAcao {
+  ticker: string;
+  empresa: string;
+  dataCompra: string;
+  quantidade: number;
+  precoCompra: number;
+}
+
+// Dados enviados quando o utilizador vende acoes.
+export interface VendaAcao {
+  quantidade: number;
+}

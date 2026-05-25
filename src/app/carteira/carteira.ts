@@ -1,4 +1,5 @@
 import { Component, ElementRef, HostBinding, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Chart, registerables } from 'chart.js';
 
 import { LinhaCarteira, TotaisCarteira } from '../models/carteira.model';
@@ -8,6 +9,7 @@ Chart.register(...registerables);
 
 @Component({
   selector: 'app-carteira',
+  imports: [FormsModule],
   templateUrl: './carteira.html',
   styleUrl: './carteira.css',
 })
@@ -35,6 +37,19 @@ export class Carteira implements OnInit, OnDestroy {
   temaEscuro = false;
   aCarregar = true;
   mensagemErro = '';
+  mensagemOperacao = '';
+  operacaoEmCurso = false;
+  compra = {
+    ticker: '',
+    empresa: '',
+    dataCompra: new Date().toISOString().slice(0, 10),
+    quantidade: 1,
+    precoCompra: 0,
+  };
+  venda = {
+    ticker: '',
+    quantidade: 1,
+  };
   private readonly chaveTema = 'tema-carteira-acoes';
   private graficoCarteira?: ElementRef<HTMLCanvasElement>;
   private grafico?: Chart;
@@ -47,11 +62,21 @@ export class Carteira implements OnInit, OnDestroy {
     this.temaEscuro = localStorage.getItem(this.chaveTema) === 'escuro';
 
     // Carrega a carteira, calcula totais e prepara o grafico.
+    this.carregarDados();
+  }
+
+  private carregarDados(): void {
+    this.aCarregar = true;
+    this.mensagemErro = '';
+
     this.carteiraService.carregarCarteira().subscribe({
       next: (linhas) => {
         this.linhas = linhas;
         this.totais = this.calcularTotais(linhas);
         this.numeroTotalAcoes = this.calcularNumeroTotalAcoes(linhas);
+        if (!linhas.some((linha) => linha.ticker === this.venda.ticker)) {
+          this.venda.ticker = linhas[0]?.ticker || '';
+        }
         this.aCarregar = false;
         this.agendarCriacaoGrafico();
       },
@@ -114,6 +139,73 @@ export class Carteira implements OnInit, OnDestroy {
     return 'variacao-nula';
   }
 
+  comprar(): void {
+    if (this.operacaoEmCurso) {
+      return;
+    }
+
+    const compra = {
+      ticker: this.compra.ticker.trim().toUpperCase(),
+      empresa: this.compra.empresa.trim(),
+      dataCompra: this.compra.dataCompra,
+      quantidade: Number(this.compra.quantidade),
+      precoCompra: Number(this.compra.precoCompra),
+    };
+
+    if (!compra.ticker || !compra.empresa || compra.quantidade <= 0 || compra.precoCompra <= 0) {
+      this.mensagemOperacao = 'Preencha todos os dados para avançar.';
+      return;
+    }
+
+    this.operacaoEmCurso = true;
+    this.carteiraService.comprarAcao(compra).subscribe({
+      next: () => {
+        this.mensagemOperacao = 'Compra registada com sucesso.';
+        this.compra = {
+          ticker: '',
+          empresa: '',
+          dataCompra: new Date().toISOString().slice(0, 10),
+          quantidade: 1,
+          precoCompra: 0,
+        };
+        this.operacaoEmCurso = false;
+        this.carregarDados();
+      },
+      error: () => {
+        this.mensagemOperacao = 'Nao foi possivel registar a compra. Confirme se o backend esta ligado.';
+        this.operacaoEmCurso = false;
+      },
+    });
+  }
+
+  vender(): void {
+    if (this.operacaoEmCurso) {
+      return;
+    }
+
+    const ticker = this.venda.ticker;
+    const quantidade = Number(this.venda.quantidade);
+
+    if (!ticker || quantidade <= 0) {
+      this.mensagemOperacao = 'Escolha uma acao e indique uma quantidade valida.';
+      return;
+    }
+
+    this.operacaoEmCurso = true;
+    this.carteiraService.venderAcao(ticker, { quantidade }).subscribe({
+      next: () => {
+        this.mensagemOperacao = 'Venda registada com sucesso.';
+        this.venda.quantidade = 1;
+        this.operacaoEmCurso = false;
+        this.carregarDados();
+      },
+      error: () => {
+        this.mensagemOperacao = 'Nao foi possivel registar a venda. Confirme a quantidade e o backend.';
+        this.operacaoEmCurso = false;
+      },
+    });
+  }
+
   private calcularNumeroTotalAcoes(linhas: LinhaCarteira[]): number {
     return linhas.reduce((soma, linha) => soma + linha.quantidade, 0);
   }
@@ -122,9 +214,7 @@ export class Carteira implements OnInit, OnDestroy {
   private calcularTotais(linhas: LinhaCarteira[]): TotaisCarteira {
     const totalAquisicao = linhas.reduce((soma, linha) => soma + linha.totalAquisicao, 0);
     const valorAtual = linhas.reduce((soma, linha) => soma + linha.valorAtual, 0);
-    const variacaoPercentual =
-      totalAquisicao === 0 ? 0 : ((valorAtual - totalAquisicao) / totalAquisicao) * 100;
-
+    const variacaoPercentual = totalAquisicao === 0 ? 0 : ((valorAtual - totalAquisicao) / totalAquisicao) * 100;
     return {
       totalAquisicao,
       valorAtual,

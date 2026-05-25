@@ -23,6 +23,16 @@ const pool = mysql.createPool({
 app.use(cors());
 app.use(express.json());
 
+function normalizarAcao(corpo) {
+  return {
+    ticker: String(corpo.ticker || '').trim().toUpperCase(),
+    empresa: String(corpo.empresa || '').trim(),
+    dataCompra: String(corpo.dataCompra || '').trim(),
+    quantidade: Number(corpo.quantidade),
+    precoCompra: Number(corpo.precoCompra),
+  };
+}
+
 // Devolve os dados base da carteira guardados na base de dados.
 app.get('/api/carteira', async (_req, res) => {
   try {
@@ -48,6 +58,111 @@ app.get('/api/carteira', async (_req, res) => {
   } catch (erro) {
     console.error('Erro ao obter a carteira:', erro.sqlMessage || erro.message || erro.code);
     res.status(500).json({ mensagem: 'Não foi possível obter a carteira.' });
+  }
+});
+
+// Regista uma compra. Se o ticker existir, soma a quantidade e recalcula o preco medio.
+app.post('/api/carteira', async (req, res) => {
+  const acao = normalizarAcao(req.body);
+
+  if (!acao.ticker || !acao.empresa || !acao.dataCompra || acao.quantidade <= 0 || acao.precoCompra <= 0) {
+    return res.status(400).json({ mensagem: 'Dados da compra invalidos.' });
+  }
+
+  try {
+    const [existentes] = await pool.query(
+      `
+        SELECT
+          id,
+          quantidade,
+          CAST(preco_compra AS DECIMAL(10, 2)) AS precoCompra
+        FROM carteira_acoes
+        WHERE ticker = ?
+        LIMIT 1
+      `,
+      [acao.ticker],
+    );
+
+    if (existentes.length > 0) {
+      const existente = existentes[0];
+      const quantidadeAtual = Number(existente.quantidade);
+      const precoAtual = Number(existente.precoCompra);
+      const novaQuantidade = quantidadeAtual + acao.quantidade;
+      const novoPrecoMedio =
+        (quantidadeAtual * precoAtual + acao.quantidade * acao.precoCompra) / novaQuantidade;
+
+      await pool.query(
+        `
+          UPDATE carteira_acoes
+          SET empresa = ?, data_compra = ?, quantidade = ?, preco_compra = ?
+          WHERE id = ?
+        `,
+        [acao.empresa, acao.dataCompra, novaQuantidade, novoPrecoMedio, existente.id],
+      );
+    } else {
+      await pool.query(
+        `
+          INSERT INTO carteira_acoes
+            (ticker, empresa, data_compra, quantidade, preco_compra)
+          VALUES
+            (?, ?, ?, ?, ?)
+        `,
+        [acao.ticker, acao.empresa, acao.dataCompra, acao.quantidade, acao.precoCompra],
+      );
+    }
+
+    res.status(201).json(acao);
+  } catch (erro) {
+    console.error('Erro ao registar compra:', erro.sqlMessage || erro.message || erro.code);
+    res.status(500).json({ mensagem: 'Nao foi possivel registar a compra.' });
+  }
+});
+
+// Regista uma venda. Se a quantidade chegar a zero, remove a acao da carteira.
+app.patch('/api/carteira/:ticker/vender', async (req, res) => {
+  const ticker = String(req.params.ticker || '').trim().toUpperCase();
+  const quantidadeVendida = Number(req.body.quantidade);
+
+  if (!ticker || quantidadeVendida <= 0) {
+    return res.status(400).json({ mensagem: 'Dados da venda invalidos.' });
+  }
+
+  try {
+    const [existentes] = await pool.query(
+      `
+        SELECT id, quantidade
+        FROM carteira_acoes
+        WHERE ticker = ?
+        LIMIT 1
+      `,
+      [ticker],
+    );
+
+    if (existentes.length === 0) {
+      return res.status(404).json({ mensagem: 'Acao nao encontrada na carteira.' });
+    }
+
+    const existente = existentes[0];
+    const quantidadeAtual = Number(existente.quantidade);
+
+    if (quantidadeVendida > quantidadeAtual) {
+      return res.status(400).json({ mensagem: 'Quantidade de venda superior a quantidade disponivel.' });
+    }
+
+    if (quantidadeVendida === quantidadeAtual) {
+      await pool.query('DELETE FROM carteira_acoes WHERE id = ?', [existente.id]);
+      return res.json({ removida: true });
+    }
+
+    await pool.query('UPDATE carteira_acoes SET quantidade = ? WHERE id = ?', [
+      quantidadeAtual - quantidadeVendida,
+      existente.id,
+    ]);
+
+    res.json({ ticker, quantidade: quantidadeAtual - quantidadeVendida });
+  } catch (erro) {
+    console.error('Erro ao registar venda:', erro.sqlMessage || erro.message || erro.code);
+    res.status(500).json({ mensagem: 'Nao foi possivel registar a venda.' });
   }
 });
 

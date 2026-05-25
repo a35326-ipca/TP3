@@ -74,6 +74,64 @@
       </article>
     </div>
 
+    <section class="operacoes">
+      <div class="operacoes-cabecalho">
+        <h2>Operações</h2>
+      </div>
+
+      @if (mensagemOperacao) {
+        <p class="mensagem-operacao">{{ mensagemOperacao }}</p>
+      }
+
+      <div class="operacoes-grelha">
+        <form class="cartao-operacao" (ngSubmit)="comprar()">
+          <h3>Comprar</h3>
+          <div class="campos-operacao">
+            <label>
+              Ticker
+              <input name="tickerCompra" type="text" [(ngModel)]="compra.ticker" />
+            </label>
+            <label>
+              Empresa
+              <input name="empresaCompra" type="text" [(ngModel)]="compra.empresa" />
+            </label>
+            <label>
+              Data
+              <input name="dataCompra" type="date" [(ngModel)]="compra.dataCompra" />
+            </label>
+            <label>
+              Quantidade
+              <input name="quantidadeCompra" type="number" min="1" [(ngModel)]="compra.quantidade" />
+            </label>
+            <label>
+              Preço de compra
+              <input name="precoCompra" type="number" min="0.01" step="0.01" [(ngModel)]="compra.precoCompra" />
+            </label>
+          </div>
+          <button class="botao-operacao" type="submit" [disabled]="operacaoEmCurso">Comprar</button>
+        </form>
+
+        <form class="cartao-operacao" (ngSubmit)="vender()">
+          <h3>Vender</h3>
+          <div class="campos-operacao vender">
+            <label>
+              Ação
+              <select name="tickerVenda" [(ngModel)]="venda.ticker">
+                @for (linha of linhas; track linha.ticker) {
+                  <option [value]="linha.ticker">{{ linha.ticker }} - {{ linha.empresa }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              Quantidade
+              <input name="quantidadeVenda" type="number" min="1" [(ngModel)]="venda.quantidade" />
+            </label>
+          </div>
+          <button class="botao-operacao secundario" type="submit" [disabled]="operacaoEmCurso">Vender</button>
+        </form>
+      </div>
+    </section>
+
     <div class="tabela-wrapper">
       <table>
         <thead>
